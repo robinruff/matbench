@@ -1,0 +1,8 @@
+{
+  "authors": "Robin Ruff, Patrick Reiser, Jan Stühmer, Pascal Friederich",
+  "algorithm": "coGN",
+  "algorithm_long": "Connectivity optimized Graph Network",
+  "bibtex_refs": "@misc{ruff2023connectivity, title={Connectivity Optimized Nested Graph Networks for Crystal Structures}, author={Robin Ruff and Patrick Reiser and Jan Stühmer and Pascal Friederich}, year={2023}, eprint={2302.14102}, archivePrefix={arXiv}, primaryClass={cs.LG}}",
+  "notes": "",
+  "requirements": {"python":  ["git+https://github.com/robinruff/graphlist", "kgcnn"]}
+}
