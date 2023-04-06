@@ -327,11 +327,12 @@ def train_procedure(model_cfg, crystal_preprocessor, matbench_datasets_subset,
                     predictions = model.predict(x_test)
                     
                     if task.metadata["task_type"] != "classification":
+                        if use_scaler:
+                            predictions = scaler.inverse_transform(predictions)
+                    else:
                         def sigmoid(x):
                             return 1 / (1 + np.exp(-x))
                         predictions = sigmoid(predictions)
-                    elif use_scaler:
-                        predictions = scaler.inverse_transform(predictions)
 
                     if predictions.shape[-1] == 1:
                         predictions = np.squeeze(predictions, axis=-1)
@@ -373,5 +374,5 @@ if __name__ == '__main__':
                              use_scaler=True,
                              epochs=600,
                              batch_size=64)
-        mb.to_file('results.json.gz')
+        mb.to_file('results_coNGN.json.gz')
 
