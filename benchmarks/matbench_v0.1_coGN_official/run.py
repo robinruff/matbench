@@ -223,7 +223,7 @@ def get_input_tensors(inputs, graphlist):
         if input_name in input_names:
             input_tensors[input_name] = tf.convert_to_tensor(graphlist.graph_attributes[input_name])
     input_tensors['edge_indices'] = tf.RaggedTensor.from_row_lengths(
-                    graphlist.edge_indices[:],
+                    graphlist.edge_indices[:][:, [1, 0]],
                     graphlist.num_edges)
     if 'line_graph_edge_indices' in input_names:
         graphs_line_graph_edge_indices = []
@@ -236,6 +236,15 @@ def get_input_tensors(inputs, graphlist):
         input_tensors['line_graph_edge_indices'] = line_graph_edge_indices
 
     return input_tensors
+
+def get_id_index_mapping(graphlist):
+    index_mapping = {id_.decode():i for i, id_ in 
+            enumerate(graphlist.graph_attributes['dataset_id'][:])}
+    return index_mapping
+
+def get_graphs(id_index_mapping, graphlist, inputs):
+    idxs = [id_index_mapping[id_] for id_ in inputs.index]
+    return graphlist[idxs]
 
 
 def train_procedure(model_cfg, crystal_preprocessor, matbench_datasets_subset, 
@@ -268,17 +277,14 @@ def train_procedure(model_cfg, crystal_preprocessor, matbench_datasets_subset,
 
             # Mapping from unique crystal ids in dataset to index of the cached file
             # This is a helper construct to reconstruct original matbench dataset splits with preprocessed crystals. 
-            id_index_mapping = {id_.decode():i for i, id_ in
-                                enumerate(preprocessed_crystals.graph_attributes['dataset_id'][:])}
-            def get_graphs(inputs):
-                idxs = [id_index_mapping[id_] for id_ in inputs.index]
-                return preprocessed_crystals[idxs]
+            id_index_mapping = get_id_index_mapping(preprocessed_crystals)
 
             task.load()
             for fold in task.folds:
                 intermediate_results_ = results_cache / task.dataset_name / str(fold)
 
-                if intermediate_results_.exists():
+                #if intermediate_results_.exists():
+                if False:
                     # If there are already intermediate results stored, skip the training.
                     print('Load intermediate results')
                     predictions = np.load(str(intermediate_results_ / 'predictions.npy'))
@@ -290,14 +296,16 @@ def train_procedure(model_cfg, crystal_preprocessor, matbench_datasets_subset,
                     # Get training data with target values
                     train_inputs, train_outputs = task.get_train_and_val_data(fold)
 
-                    train_graphs = get_graphs(train_inputs)
+                    train_graphs = get_graphs(id_index_mapping, preprocessed_crystals, train_inputs)
                     # Get Tensor Input
                     x_train = get_input_tensors(model.inputs, train_graphs)
                     y_train = train_outputs.to_numpy().reshape(-1,1)
+                    print(y_train.shape, y_train)
 
                     if use_scaler and task.metadata["task_type"] != "classification":
                         scaler = StandardScaler()
-                        y_train = scaler.fit_transform(y_train)
+                       print(scaler.mean_, scaler.scale_)
+                    print(y_train.shape, y_train)
                     
                     if task.metadata["task_type"] == "classification":
                         loss = ks.losses.BinaryCrossentropy(from_logits=True)
@@ -320,7 +328,7 @@ def train_procedure(model_cfg, crystal_preprocessor, matbench_datasets_subset,
 
                     # Get test data
                     test_inputs = task.get_test_data(fold, include_target=False)
-                    test_graphs = get_graphs(test_inputs)
+                    test_graphs = get_graphs(id_index_mapping, preprocessed_crystals, test_inputs)
                     x_test = get_input_tensors(model.inputs, test_graphs)
 
                     # Predict
