@@ -300,12 +300,10 @@ def train_procedure(model_cfg, crystal_preprocessor, matbench_datasets_subset,
                     # Get Tensor Input
                     x_train = get_input_tensors(model.inputs, train_graphs)
                     y_train = train_outputs.to_numpy().reshape(-1,1)
-                    print(y_train.shape, y_train)
 
                     if use_scaler and task.metadata["task_type"] != "classification":
                         scaler = StandardScaler()
-                       print(scaler.mean_, scaler.scale_)
-                    print(y_train.shape, y_train)
+                        y_train = scaler.fit_transform(y_train)
                     
                     if task.metadata["task_type"] == "classification":
                         loss = ks.losses.BinaryCrossentropy(from_logits=True)
