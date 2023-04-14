@@ -80,7 +80,7 @@ class MatbenchDataset:
         self,
         dataset_name: str,
         preprocessor: CrystalPreprocessor,
-        processes=6,
+        processes=8,
         batch_size=500,
     ):
         """Returns the file path for a dataset-preprocessor-combination.
@@ -283,8 +283,7 @@ def train_procedure(model_cfg, crystal_preprocessor, matbench_datasets_subset,
             for fold in task.folds:
                 intermediate_results_ = results_cache / task.dataset_name / str(fold)
 
-                #if intermediate_results_.exists():
-                if False:
+                if intermediate_results_.exists():
                     # If there are already intermediate results stored, skip the training.
                     print('Load intermediate results')
                     predictions = np.load(str(intermediate_results_ / 'predictions.npy'))
